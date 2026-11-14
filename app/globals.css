@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant short (@media (max-height: 620px));
+
 @theme {
   --color-background: #000000;
   --color-foreground: #f5f5f5;
@@ -7,9 +9,11 @@
   --color-primary-foreground: #111111;
   --color-border: #333333;
   --color-ring: #5aa9ff;
-  --color-slot: #121212;
+  --color-slot: #1a1a1e;
   --color-opponent: #ff5a5a;
   --color-self: #5aa9ff;
   --color-muted: #8a8a8a;
+  --color-surface: rgba(10, 10, 12, 0.72);
+  --color-glass: rgba(255, 255, 255, 0.06);
   --font-sans: "Segoe UI", system-ui, sans-serif;
 }
