@@ -16,7 +16,13 @@ type DeckOwner = keyof typeof DEFAULT_DECKS;
 
 const FADE = { duration: 0.18 };
 
-export function PickDeckDialog({ onClose }: { onClose: () => void }) {
+export function PickDeckDialog({
+  onClose,
+  onStart,
+}: {
+  onClose: () => void;
+  onStart?: () => void;
+}) {
   const [view, setView] = useState<PickDeckView>("match");
   const [decks, setDecks] = useState(DEFAULT_DECKS);
   const [pickingFor, setPickingFor] = useState<DeckOwner>("player");
@@ -77,7 +83,7 @@ export function PickDeckDialog({ onClose }: { onClose: () => void }) {
                     player: current.opponent,
                   }));
                 }}
-                onStart={onClose}
+                onStart={onStart ?? onClose}
                 onCancel={onClose}
               />
             </motion.div>

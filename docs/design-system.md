@@ -4,39 +4,39 @@
 
 ## สี (tokens ใน `app/globals.css`)
 
-| Token | ค่า | ใช้ที่ |
-|---|---|---|
-| `background` | `#000000` | พื้นฐานของหน้า (ซ้อนด้วย gradient ด้านล่าง) |
-| `foreground` | `#f5f5f5` | ข้อความหลัก |
-| `muted` | `#8a8a8a` | ป้ายการ์ด, Cancel, ข้อความรอง |
-| `slot` | `#1a1a1e` | พื้นช่องการ์ดทุกช่องบนบอร์ด |
-| `border` | `#333333` | เส้นขอบกลาง ๆ |
-| `ring` | `#5aa9ff` | focus ring |
-| `primary` | `#ffffff` | พื้นปุ่ม START |
-| `primary-foreground` | `#111111` | ตัวอักษรบนปุ่ม START |
-| `opponent` | `#ff5a5a` | Player 2, ขอบ Active ฝั่งตรงข้าม, ปุ่มสลับเด็ค |
-| `self` | `#5aa9ff` | Player 1, ขอบ Active ฝั่งเรา |
-| `surface` | `rgba(10,10,12,0.72)` | พื้น modal (โปร่งให้บอร์ดที่เบลออยู่ข้างหลังทะลุ) |
-| `glass` | `rgba(255,255,255,0.06)` | พื้นแถวเด็ค |
+| Token                | ค่า                      | ใช้ที่                                            |
+| -------------------- | ------------------------ | ------------------------------------------------- |
+| `background`         | `#000000`                | พื้นฐานของหน้า (ซ้อนด้วย gradient ด้านล่าง)       |
+| `foreground`         | `#f5f5f5`                | ข้อความหลัก                                       |
+| `muted`              | `#8a8a8a`                | ป้ายการ์ด, Cancel, ข้อความรอง                     |
+| `slot`               | `#1a1a1e`                | พื้นช่องการ์ดทุกช่องบนบอร์ด                       |
+| `border`             | `#333333`                | เส้นขอบกลาง ๆ                                     |
+| `ring`               | `#5aa9ff`                | focus ring                                        |
+| `primary`            | `#ffffff`                | พื้นปุ่ม START                                    |
+| `primary-foreground` | `#111111`                | ตัวอักษรบนปุ่ม START                              |
+| `opponent`           | `#ff5a5a`                | Player 2, ขอบ Active ฝั่งตรงข้าม, ปุ่มสลับเด็ค    |
+| `self`               | `#5aa9ff`                | Player 1, ขอบ Active ฝั่งเรา                      |
+| `surface`            | `rgba(10,10,12,0.72)`    | พื้น modal (โปร่งให้บอร์ดที่เบลออยู่ข้างหลังทะลุ) |
+| `glass`              | `rgba(255,255,255,0.06)` | พื้นแถวเด็ค                                       |
 
 ## ค่าที่ใช้ตรง ๆ (นอก token)
 
-| ค่า | ใช้ที่ |
-|---|---|
+| ค่า                                  | ใช้ที่                                     |
+| ------------------------------------ | ------------------------------------------ |
 | `#15151B → #0B0B0F → #050506` radial | พื้นหลังหน้าและพื้นบอร์ด (gradient กลางจอ) |
-| `#140808 → #3A1111` (90deg) | แถบ Player 2 ด้านบน |
-| `#113059 → #081220` (90deg) | แถบ Player 1 ด้านล่าง |
-| `#2F2F35` | ขอบช่องการ์ด |
-| `#2F5FA7` | เส้นกลางจอ (ไล่เป็นดำสองข้าง) |
-| `#7894ED → #3AE4EF` | ขอบปุ่ม Start |
-| `rgba(58,228,239,0.35)` | glow ปุ่ม Start |
-| `#111111` / `#303030` | พื้นและขอบ FAB |
-| `#141418` / `#3a3a40` | Energy Zone |
-| `white/30` | ขอบ modal |
-| `white/[0.03]` | พื้น panel ในหน้า VS |
-| `white/10` | hover ของแถวเด็ค, เส้นใต้แท็บ |
-| `white/30`, `white/50` | แถบเลื่อนของรายการเด็ค (thumb, hover) |
-| `opponent/15`, `opponent/50` | พื้นและขอบปุ่มสลับเด็ค |
+| `#140808 → #3A1111` (90deg)          | แถบ Player 2 ด้านบน                        |
+| `#113059 → #081220` (90deg)          | แถบ Player 1 ด้านล่าง                      |
+| `#2F2F35`                            | ขอบช่องการ์ด                               |
+| `#2F5FA7`                            | เส้นกลางจอ (ไล่เป็นดำสองข้าง)              |
+| `#7894ED → #3AE4EF`                  | ขอบปุ่ม Start                              |
+| `rgba(58,228,239,0.35)`              | glow ปุ่ม Start                            |
+| `#111111` / `#303030`                | พื้นและขอบ FAB                             |
+| `#141418` / `#3a3a40`                | Energy Zone                                |
+| `white/30`                           | ขอบ modal                                  |
+| `white/[0.03]`                       | พื้น panel ในหน้า VS                       |
+| `white/10`                           | hover ของแถวเด็ค, เส้นใต้แท็บ              |
+| `white/30`, `white/50`               | แถบเลื่อนของรายการเด็ค (thumb, hover)      |
+| `opponent/15`, `opponent/50`         | พื้นและขอบปุ่มสลับเด็ค                     |
 
 ## ตัวอักษร
 
@@ -56,15 +56,17 @@
 
 ## คอมโพเนนต์
 
-| คอมโพเนนต์ | ไฟล์ | สีหลัก |
-|---|---|---|
-| OpeningBoard (orchestrator) | `components/opening-board.tsx` | พื้น gradient |
-| WideBoard | `components/board/wide-board.tsx` | slot, opponent, self |
-| NarrowBoard | `components/board/narrow-board.tsx` | slot, opponent, self |
-| parts (Slot, Pile, EnergyZone, PrizeRings, Fab) | `components/board/parts.tsx` | slot, border, muted, opponent, self |
-| PickDeckDialog | `components/pick-deck/pick-deck-dialog.tsx` | surface, white/30 |
-| MatchPreview | `components/pick-deck/match-preview.tsx` | opponent, self, white/[0.03] |
-| DeckList | `components/pick-deck/deck-list.tsx` | glass, muted, white/10 |
+| คอมโพเนนต์                                      | ไฟล์                                        | สีหลัก                              |
+| ----------------------------------------------- | ------------------------------------------- | ----------------------------------- |
+| OpeningBoard (orchestrator)                     | `components/opening-board.tsx`              | พื้น gradient                       |
+| WideBoard                                       | `components/board/wide-board.tsx`           | slot, opponent, self                |
+| NarrowBoard                                     | `components/board/narrow-board.tsx`         | slot, opponent, self                |
+| parts (Slot, Pile, EnergyZone, PrizeRings, Fab) | `components/board/parts.tsx`                | slot, border, muted, opponent, self |
+| PickDeckDialog                                  | `components/pick-deck/pick-deck-dialog.tsx` | surface, white/30                   |
+| MatchPreview                                    | `components/pick-deck/match-preview.tsx`    | opponent, self, white/[0.03]        |
+| DeckList                                        | `components/pick-deck/deck-list.tsx`        | glass, muted, white/10              |
+| VsIntro                                         | `components/pick-deck/vs-intro.tsx`         | opponent, self, white, black/70     |
+| CoinToss                                        | `components/pick-deck/coin-toss.tsx`        | opponent, self, white, black/55     |
 
 แท็บในหน้าเลือกเด็คเป็นแบบ minimal: ข้อความสองแท็บบนเส้นคั่นบาง `white/10` แท็บที่เลือกใช้ข้อความขาวและเส้นใต้ 2px แท็บที่ไม่ได้เลือกใช้ `muted`
 
@@ -85,10 +87,16 @@
 - เปิด/ปิด modal: opacity 180ms, scale 0.98 → 1
 - เปลี่ยนหน้า VS กับรายการเด็ค: fade ออก 100ms, สลับขนาด modal ตอนเนื้อหา opacity 0, แล้ว fade เข้า 100ms (ไม่เห็นการกระตุกของขนาด)
 - สลับเด็คด้วยปุ่มลูกศร: fade ออก 150ms, สลับชื่อตอน opacity 0, fade เข้า 150ms
+- กด Start ในหน้า VS: ปิด popup แล้วเล่น VsIntro เต็มจอ ปิดเองที่ 3.8 วินาที หรือกดที่จอ
+- หลัง VsIntro จบ เปิด CoinToss ทันทีและทอยอัตโนมัติ ไม่มีปุ่มกด พื้นหลังเบลอแบบหน้าเลือกเด็ค, หลัง 1.5 วินาทีขึ้นป้าย Going First กับชื่อผู้เล่น, หลัง 3.4 วินาทีลบเหรียญแล้วเรียก onResult (หัว = Player 1, ก้อย = Player 2), ผู้ชนะใช้สีฝั่งของตัวเอง
+- VsIntro: แถบ Player 2 ด้านบนใช้ gradient เดียวกับแถบผู้เล่น `#140808 → #3A1111` ตกลงมาจากนอกจอด้านบน, แถบ Player 1 ด้านล่างใช้ `#113059 → #081220` เด้งขึ้นมาจากนอกจอด้านล่างแบบนุ่ม, แทบขาวคั่นกลางโผล่ที่กลางจอหลังแถบเข้าที่, อวตารเป็นวงกลมขาวขอบสีฝั่ง (แดง Player 2, น้ำเงิน Player 1), VS อยู่ในกรอบดำมนมีเงาให้เด่น, ชื่อสีขาว ขึ้นหลังแถบเข้าที่
 - กดปุ่ม Start: scale 0.96 ตาม `prefers-reduced-motion`
 - แสงหลังปุ่ม Start: loop 2.4s, opacity 0.35 → 0.85 → 0.35, scale 1 → 1.06 (ถ้า reduced motion หยุดที่ opacity 0.55)
 - hover การ์ดในหน้า VS: `whileHover` scale 1.03, `whileTap` 0.99, 150ms
 - เส้นใต้แท็บที่เลือก: เลื่อนด้วย `layoutId` แบบ spring (reduced motion เลื่อนทันที)
+- VsIntro: overlay fade 300ms, flash ขาว 400ms, shake 550ms, แถบ Player 2 ตกลงมาจากด้านบน 600ms และแถบ Player 1 เด้งขึ้นมาจากด้านล่างด้วย spring นุ่ม, แทบขาวคั่นกลางโผล่ที่ 800ms, เนื้อหา PLAYER 2 / VS / PLAYER 1 ทยอยขึ้นที่ 1000/1150/1300ms, ประกาย 16 จุดกระพริบวน, รวม 3.8 วินาที
+- reduced motion: ตัด shake ประกาย และ flash เหลือแค่ fade
+- CoinToss: เหรียญ 3D `preserve-3d` หมุน rotateX 1440 (หัว) หรือ 1620 (ก้อย), y ขึ้น `boardH*0.3` แล้วกลับ, scale 1 → 1.6 → 1, duration 1.5s, ป้ายผล fade+slide, ตัดเหรียญที่ 3.4s, ห้ามใส่ filter บนเหรียญ
 
 ## Responsive
 
