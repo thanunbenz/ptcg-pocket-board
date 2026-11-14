@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "motion/react";
 
 import {
   BOTTOM_WASH,
+  DeckPile,
   EnergyZone,
   Fab,
   MotionButton,
@@ -28,7 +29,7 @@ function NarrowBar({ tag, isTop }: { tag: string; isTop: boolean }) {
       ) : null}
       <span
         className={cn(
-          "text-[0.8125rem] font-bold",
+          "font-two text-[0.8125rem] font-extrabold",
           isTop ? "ml-3 text-opponent" : "mr-3 text-self",
         )}
       >
@@ -41,7 +42,13 @@ function NarrowBar({ tag, isTop }: { tag: string; isTop: boolean }) {
   );
 }
 
-function NarrowStartButton({ onStart }: { onStart: () => void }) {
+function NarrowStartButton({
+  onStart,
+  disabled,
+}: {
+  onStart: () => void;
+  disabled?: boolean;
+}) {
   const reduceMotion = useReducedMotion();
 
   return (
@@ -62,7 +69,8 @@ function NarrowStartButton({ onStart }: { onStart: () => void }) {
       />
       <MotionButton
         onClick={onStart}
-        whileTap={reduceMotion ? undefined : { scale: 0.96 }}
+        disabled={disabled}
+        whileTap={reduceMotion || disabled ? undefined : { scale: 0.96 }}
         className="relative block h-full w-full rounded-full bg-white px-0 py-0 text-[0.875rem] leading-none font-medium text-[#A7A7A7] hover:bg-white"
       >
         Start
@@ -85,7 +93,15 @@ function BenchRow() {
   );
 }
 
-export function NarrowBoard({ onStart }: { onStart: () => void }) {
+export function NarrowBoard({
+  onStart,
+  startDisabled,
+  deckCounts,
+}: {
+  onStart: () => void;
+  startDisabled?: boolean;
+  deckCounts: Record<"p1" | "p2", number>;
+}) {
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
       <NarrowBar isTop tag="Player 2" />
@@ -98,10 +114,10 @@ export function NarrowBoard({ onStart }: { onStart: () => void }) {
               className="aspect-[5/7] w-full rounded-lg"
               labelClassName="bottom-1 text-[0.625rem]"
             />
-            <Pile
-              label="Deck"
+            <DeckPile
+              count={deckCounts.p2}
               className="aspect-[5/7] w-full rounded-lg"
-              labelClassName="bottom-1 text-[0.625rem]"
+              badgeClassName="rounded px-1 py-0.5 text-[10px]"
             />
           </div>
           <div className="flex flex-col items-center gap-1.5">
@@ -125,7 +141,7 @@ export function NarrowBoard({ onStart }: { onStart: () => void }) {
           </div>
           <div className="relative flex w-full items-center justify-center">
             <span className="absolute inset-x-0 top-1/2 h-px bg-[linear-gradient(90deg,#000,#2F5FA7_50%,#000)]" />
-            <NarrowStartButton onStart={onStart} />
+            <NarrowStartButton onStart={onStart} disabled={startDisabled} />
           </div>
           <div className="flex aspect-[5/7] h-[min(20dvh,40vw)] items-center justify-center rounded-xl border border-self/50 bg-slot text-[0.6875rem] text-muted">
             Active
@@ -141,10 +157,10 @@ export function NarrowBoard({ onStart }: { onStart: () => void }) {
             />
           </div>
           <div className="flex flex-col items-center gap-1.5">
-            <Pile
-              label="Deck"
+            <DeckPile
+              count={deckCounts.p1}
               className="aspect-[5/7] w-full rounded-lg"
-              labelClassName="bottom-1 text-[0.625rem]"
+              badgeClassName="rounded px-1 py-0.5 text-[10px]"
             />
             <Pile
               label="Discard"

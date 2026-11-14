@@ -16,4 +16,5 @@
   --color-surface: rgba(10, 10, 12, 0.72);
   --color-glass: rgba(255, 255, 255, 0.06);
   --font-sans: "Segoe UI", system-ui, sans-serif;
+  --font-two: var(--font-nunito), "Segoe UI", system-ui, sans-serif;
 }

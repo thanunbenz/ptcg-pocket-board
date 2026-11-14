@@ -5,16 +5,32 @@ import { AnimatePresence } from "motion/react";
 
 import { NarrowBoard } from "@/components/board/narrow-board";
 import { WideBoard } from "@/components/board/wide-board";
+import { useDealer } from "@/components/game/use-dealer";
 import { CoinToss } from "@/components/pick-deck/coin-toss";
 import { PickDeckDialog } from "@/components/pick-deck/pick-deck-dialog";
 import { VsIntro } from "@/components/pick-deck/vs-intro";
 
 export function OpeningBoard() {
   const boardRef = useRef<HTMLDivElement>(null);
+  const deckP1Ref = useRef<HTMLDivElement>(null);
+  const deckP2Ref = useRef<HTMLDivElement>(null);
+  const handP1Ref = useRef<HTMLDivElement>(null);
+  const handP2Ref = useRef<HTMLDivElement>(null);
+
   const [isPickDeckOpen, setPickDeckOpen] = useState(false);
   const [isIntroOpen, setIntroOpen] = useState(false);
   const [isCoinOpen, setCoinOpen] = useState(false);
   const [firstPlayer, setFirstPlayer] = useState<"p1" | "p2" | null>(null);
+
+  const dealer = useDealer({
+    p1: { deck: deckP1Ref, hand: handP1Ref },
+    p2: { deck: deckP2Ref, hand: handP2Ref },
+  });
+
+  const openPicker = () => {
+    dealer.cancel();
+    setPickDeckOpen(true);
+  };
 
   return (
     <div
@@ -23,10 +39,24 @@ export function OpeningBoard() {
       className="h-dvh overflow-hidden bg-[radial-gradient(circle_at_50%_42%,#15151B_0%,#0B0B0F_55%,#050506_100%)] [--bar:clamp(2.25rem,4dvh,2.75rem)]"
     >
       <div className="hidden h-full flex-col landscape:flex">
-        <WideBoard onStart={() => setPickDeckOpen(true)} />
+        <WideBoard
+          onStart={openPicker}
+          startDisabled={dealer.dealing}
+          deckCounts={dealer.deckCounts}
+          hands={dealer.hands}
+          offsets={dealer.offsets}
+          deckP1Ref={deckP1Ref}
+          deckP2Ref={deckP2Ref}
+          handP1Ref={handP1Ref}
+          handP2Ref={handP2Ref}
+        />
       </div>
       <div className="hidden h-full portrait:flex">
-        <NarrowBoard onStart={() => setPickDeckOpen(true)} />
+        <NarrowBoard
+          onStart={openPicker}
+          startDisabled={dealer.dealing}
+          deckCounts={dealer.deckCounts}
+        />
       </div>
 
       <AnimatePresence>
@@ -62,7 +92,10 @@ export function OpeningBoard() {
             boardRef={boardRef}
             onResult={(heads) => {
               setFirstPlayer(heads ? "p1" : "p2");
-              window.setTimeout(() => setCoinOpen(false), 900);
+              window.setTimeout(() => {
+                setCoinOpen(false);
+                void dealer.deal();
+              }, 900);
             }}
           />
         ) : null}

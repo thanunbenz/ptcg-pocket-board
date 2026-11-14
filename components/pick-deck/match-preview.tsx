@@ -44,7 +44,7 @@ function DeckPanel({
       {action ? <div className="absolute top-2 right-2">{action}</div> : null}
       <p
         className={cn(
-          "text-sm font-bold",
+          "font-two text-sm font-bold",
           isOpponent ? "text-opponent" : "text-self",
         )}
       >

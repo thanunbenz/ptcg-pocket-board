@@ -130,7 +130,7 @@ export function CoinToss({
           </p>
           <p
             className={cn(
-              "mt-[min(0.6vw,1dvh)] text-[min(3.2vw,6dvh)] leading-none font-black",
+              "font-two mt-[min(0.6vw,1dvh)] text-[min(3.2vw,6dvh)] leading-none font-black",
               shownHeads ? "text-self" : "text-opponent",
             )}
           >

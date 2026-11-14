@@ -70,7 +70,7 @@ function PlayerBlock({
   const avatar = <SideAvatar tone={tone} />;
   const name = (
     <div className="text-center">
-      <p className="text-[min(3.6vw,6dvh)] leading-none font-black tracking-wide text-white uppercase">
+      <p className="font-two text-[min(3.6vw,6dvh)] leading-none font-black tracking-wide text-white uppercase">
         {player.name}
       </p>
       {player.tag ? (
