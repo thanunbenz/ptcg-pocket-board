@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #000000;
+  --color-foreground: #f5f5f5;
+  --color-primary: #ffffff;
+  --color-primary-foreground: #111111;
+  --color-border: #333333;
+  --color-ring: #5aa9ff;
+  --color-slot: #121212;
+  --color-opponent: #ff5a5a;
+  --color-self: #5aa9ff;
+  --color-muted: #8a8a8a;
+  --font-sans: "Segoe UI", system-ui, sans-serif;
+}
