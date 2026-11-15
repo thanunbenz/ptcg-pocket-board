@@ -8,8 +8,8 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "PTCG Pocket",
-  description: "Opening board prototype",
+  title: "Pokémon TCG Pocket Board (POC)",
+  description: "Board game POC for wiring into a game engine later",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

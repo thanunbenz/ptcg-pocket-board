@@ -16,7 +16,15 @@ import {
 } from "@/components/board/parts";
 import { cn } from "@/lib/utils";
 
-function NarrowBar({ tag, isTop }: { tag: string; isTop: boolean }) {
+function NarrowBar({
+  tag,
+  isTop,
+  points,
+}: {
+  tag: string;
+  isTop: boolean;
+  points: number;
+}) {
   return (
     <div
       className={cn(
@@ -25,7 +33,12 @@ function NarrowBar({ tag, isTop }: { tag: string; isTop: boolean }) {
       )}
     >
       {isTop ? (
-        <PrizeRings className="gap-1.5" ringClassName="size-3.5 border-2" />
+        <PrizeRings
+          className="gap-1.5"
+          ringClassName="size-3.5 border-2"
+          filled={points}
+          filledClassName="border-opponent bg-opponent"
+        />
       ) : null}
       <span
         className={cn(
@@ -36,7 +49,12 @@ function NarrowBar({ tag, isTop }: { tag: string; isTop: boolean }) {
         {tag}
       </span>
       {isTop ? null : (
-        <PrizeRings className="gap-1.5" ringClassName="size-3.5 border-2" />
+        <PrizeRings
+          className="gap-1.5"
+          ringClassName="size-3.5 border-2"
+          filled={points}
+          filledClassName="border-self bg-self"
+        />
       )}
     </div>
   );
@@ -102,6 +120,7 @@ export function NarrowBoard({
   startLabel,
   startDisabled,
   deckCounts,
+  points,
 }: {
   onStart: () => void;
   onReset: () => void;
@@ -109,10 +128,11 @@ export function NarrowBoard({
   startLabel: string;
   startDisabled?: boolean;
   deckCounts: Record<"p1" | "p2", number>;
+  points: Record<"p1" | "p2", number>;
 }) {
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
-      <NarrowBar isTop tag="Player 2" />
+      <NarrowBar isTop tag="Player 2" points={points.p2} />
       <div className="mx-auto flex min-h-0 w-full max-w-[34rem] flex-1 gap-2 px-2 py-2">
         <div className="flex w-14 shrink-0 flex-col justify-between">
           <div className="flex flex-col items-center gap-1.5">
@@ -191,7 +211,7 @@ export function NarrowBoard({
           </div>
         </div>
       </div>
-      <NarrowBar tag="Player 1" isTop={false} />
+      <NarrowBar tag="Player 1" isTop={false} points={points.p1} />
     </div>
   );
 }

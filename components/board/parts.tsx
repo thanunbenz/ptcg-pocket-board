@@ -133,16 +133,24 @@ export function EnergyZone({ className }: { className?: string }) {
 export function PrizeRings({
   className,
   ringClassName,
+  filled = 0,
+  filledClassName,
 }: {
   className?: string;
   ringClassName?: string;
+  filled?: number;
+  filledClassName?: string;
 }) {
   return (
     <div className={cn("flex", className)}>
       {Array.from({ length: 3 }, (_, ring) => (
         <span
           key={ring}
-          className={cn("rounded-full border-muted", ringClassName)}
+          className={cn(
+            "rounded-full border-muted transition-colors",
+            ringClassName,
+            ring < filled && filledClassName,
+          )}
         />
       ))}
     </div>

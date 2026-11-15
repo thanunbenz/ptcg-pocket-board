@@ -6,6 +6,8 @@ import { AnimatePresence } from "motion/react";
 import { NarrowBoard } from "@/components/board/narrow-board";
 import { WideBoard } from "@/components/board/wide-board";
 import { CoinPopup } from "@/components/game/coin-popup";
+import { EndBattle } from "@/components/game/end-battle";
+import { PointGain } from "@/components/game/point-gain";
 import { TurnChange } from "@/components/game/turn-change";
 import { useDealer } from "@/components/game/use-dealer";
 import { CoinToss } from "@/components/pick-deck/coin-toss";
@@ -28,6 +30,16 @@ export function OpeningBoard() {
   const [gameStarted, setGameStarted] = useState(false);
   const [coinPopupOpen, setCoinPopupOpen] = useState(false);
   const [boardKey, setBoardKey] = useState(0);
+  const [points, setPoints] = useState<Record<"p1" | "p2", number>>({
+    p1: 0,
+    p2: 0,
+  });
+  const [turnNumber, setTurnNumber] = useState(1);
+  const [pointGain, setPointGain] = useState<{
+    side: "p1" | "p2";
+    points: number;
+  } | null>(null);
+  const [battleEnd, setBattleEnd] = useState(false);
 
   const dealer = useDealer({
     p1: { deck: deckP1Ref, hand: handP1Ref },
@@ -40,6 +52,10 @@ export function OpeningBoard() {
     setCurrentTurn(null);
     setTurnTarget(null);
     setCoinPopupOpen(false);
+    setPoints({ p1: 0, p2: 0 });
+    setTurnNumber(1);
+    setPointGain(null);
+    setBattleEnd(false);
     setPickDeckOpen(true);
   };
 
@@ -50,6 +66,13 @@ export function OpeningBoard() {
     }
     if (dealer.dealing || dealer.mulliganing || turnTarget) return;
     setTurnTarget(currentTurn === "p2" ? "p1" : "p2");
+  };
+
+  const gainPoint = () => {
+    const side = currentTurn ?? "p1";
+    const next = Math.min(3, points[side] + 1);
+    setPoints((current) => ({ ...current, [side]: next }));
+    setPointGain({ side, points: next });
   };
 
   const statusLabel =
@@ -84,6 +107,7 @@ export function OpeningBoard() {
           shuffleSide={dealer.shuffleSide}
           departing={dealer.departing}
           onFlipCoin={() => setCoinPopupOpen(true)}
+          points={points}
           busy={dealer.dealing || dealer.mulliganing}
         />
       </div>
@@ -95,6 +119,7 @@ export function OpeningBoard() {
           startLabel={gameStarted ? "End Turn" : "Start"}
           startDisabled={dealer.dealing || dealer.mulliganing || !!turnTarget}
           deckCounts={dealer.deckCounts}
+          points={points}
         />
       </div>
 
@@ -138,6 +163,8 @@ export function OpeningBoard() {
                 void dealer.deal();
                 setGameStarted(true);
                 setBoardKey((current) => current + 1);
+                setPoints({ p1: 0, p2: 0 });
+                setTurnNumber(1);
               }, 1100);
             }}
           />
@@ -147,13 +174,53 @@ export function OpeningBoard() {
       {turnTarget ? (
         <TurnChange
           side={turnTarget}
-          onSwitch={() => setCurrentTurn(turnTarget)}
+          onSwitch={() => {
+            setCurrentTurn(turnTarget);
+            setTurnNumber((current) => current + 1);
+          }}
           onClose={() => setTurnTarget(null)}
         />
       ) : null}
 
       {coinPopupOpen ? (
         <CoinPopup onClose={() => setCoinPopupOpen(false)} />
+      ) : null}
+
+      {gameStarted && !battleEnd ? (
+        <div className="fixed top-3 left-3 z-30 flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={gainPoint}
+            className="rounded-full border border-white/15 bg-black/55 px-3 py-1.5 text-[0.62rem] font-semibold tracking-[0.08em] text-white/70 uppercase backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white"
+          >
+            Get point
+          </button>
+          <button
+            type="button"
+            onClick={() => setBattleEnd(true)}
+            className="rounded-full border border-white/15 bg-black/55 px-3 py-1.5 text-[0.62rem] font-semibold tracking-[0.08em] text-white/70 uppercase backdrop-blur-sm transition-colors hover:border-opponent/50 hover:text-opponent"
+          >
+            End battle
+          </button>
+        </div>
+      ) : null}
+
+      {pointGain ? (
+        <PointGain
+          side={pointGain.side}
+          points={pointGain.points}
+          onClose={() => setPointGain(null)}
+        />
+      ) : null}
+
+      {battleEnd ? (
+        <EndBattle
+          p1={points.p1}
+          p2={points.p2}
+          turns={turnNumber}
+          onPlayAgain={openPicker}
+          onCancel={() => setBattleEnd(false)}
+        />
       ) : null}
     </div>
   );

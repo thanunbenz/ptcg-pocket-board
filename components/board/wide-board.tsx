@@ -94,10 +94,12 @@ function WideBar({
   tag,
   isTop,
   handCount,
+  points,
 }: {
   tag: string;
   isTop: boolean;
   handCount: number;
+  points: number;
 }) {
   return (
     <div
@@ -116,6 +118,8 @@ function WideBar({
           <PrizeRings
             className="gap-1.5"
             ringClassName="size-[1.125rem] border-2"
+            filled={points}
+            filledClassName="border-opponent bg-opponent"
           />
         ) : null}
         <span
@@ -130,6 +134,8 @@ function WideBar({
           <PrizeRings
             className="ml-7 gap-1.5"
             ringClassName="size-[1.125rem] border-2"
+            filled={points}
+            filledClassName="border-self bg-self"
           />
         )}
       </div>
@@ -255,34 +261,58 @@ function DiscardPile({
   cards,
   className,
   labelClassName,
+  onClick,
 }: {
   cards: number[];
   className?: string;
   labelClassName?: string;
+  onClick: () => void;
 }) {
   const top = cards[cards.length - 1];
-  if (top === undefined) {
-    return (
-      <Pile label="Discard" className={className} labelClassName={labelClassName} />
-    );
-  }
   return (
-    <div className={cn("relative overflow-hidden", className)}>
-      <Image
-        src={CARD_FRONTS[top]}
-        alt=""
-        fill
-        sizes="20vw"
-        draggable={false}
-        className="object-cover"
-      />
-      <span className="absolute bottom-[8%] left-1/2 flex -translate-x-1/2 items-center gap-[0.16cqw] rounded-full bg-black/90 px-[0.32cqw] py-[0.1cqw] text-[0.5cqw] font-bold text-white">
-        <span className="grid size-[0.5cqw] place-items-center rounded-full bg-white">
-          <span className="size-[0.22cqw] rounded-[0.04cqw] bg-black" />
-        </span>
-        {cards.length}
-      </span>
-    </div>
+    <button
+      type="button"
+      aria-label="View discard pile"
+      onClick={onClick}
+      className={cn("relative block overflow-hidden text-left", className)}
+    >
+      {top === undefined ? (
+        <>
+          <Image
+            src="/opening/card-back.png"
+            alt=""
+            fill
+            sizes="10vw"
+            className="object-cover"
+          />
+          <span
+            className={cn(
+              "absolute inset-x-0 text-center leading-none text-muted",
+              labelClassName,
+            )}
+          >
+            Discard
+          </span>
+        </>
+      ) : (
+        <>
+          <Image
+            src={CARD_FRONTS[top]}
+            alt=""
+            fill
+            sizes="20vw"
+            draggable={false}
+            className="object-cover"
+          />
+          <span className="absolute bottom-[8%] left-1/2 flex -translate-x-1/2 items-center gap-[0.16cqw] rounded-full bg-black/90 px-[0.32cqw] py-[0.1cqw] text-[0.5cqw] font-bold text-white">
+            <span className="grid size-[0.5cqw] place-items-center rounded-full bg-white">
+              <span className="size-[0.22cqw] rounded-[0.04cqw] bg-black" />
+            </span>
+            {cards.length}
+          </span>
+        </>
+      )}
+    </button>
   );
 }
 
@@ -338,6 +368,7 @@ export function WideBoard({
   shuffleSide,
   departing,
   onFlipCoin,
+  points,
   busy,
 }: {
   onStart: () => void;
@@ -345,6 +376,7 @@ export function WideBoard({
   startLabel: string;
   statusLabel: string;
   startDisabled?: boolean;
+  points: Record<"p1" | "p2", number>;
   deckCounts: Record<"p1" | "p2", number>;
   hands: Record<"p1" | "p2", CardId[]>;
   offsets: Offsets;
@@ -380,6 +412,14 @@ export function WideBoard({
     bench: (Deployed | null)[];
   }>({ active: null, bench: [null, null, null] });
   const [discard, setDiscard] = useState<number[]>([]);
+  const [discardEnergy, setDiscardEnergy] = useState(0);
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const [energyNotice, setEnergyNotice] = useState<{
+    x: number;
+    y: number;
+    count: number;
+  } | null>(null);
+  const [energyPulse, setEnergyPulse] = useState<number | null>(null);
   const [stadium, setStadium] = useState<number | null>(null);
   const [stadiumConfirm, setStadiumConfirm] = useState<{
     x: number;
@@ -398,6 +438,7 @@ export function WideBoard({
   } | null>(null);
   const [hit, setHit] = useState<{ value: number; key: number } | null>(null);
   const hitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pulseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [energyPointer, setEnergyPointer] = useState<{
     x: number;
     y: number;
@@ -435,12 +476,53 @@ export function WideBoard({
     return { x, y };
   };
 
-  const attack = (damage: number) => {
+  const attack = (damage: number, slot: "active" | number) => {
     setActions(null);
-    if (damage <= 0) return;
-    if (hitTimer.current) clearTimeout(hitTimer.current);
-    setHit({ value: damage, key: Date.now() });
-    hitTimer.current = setTimeout(() => setHit(null), 900);
+    if (damage > 0) {
+      if (hitTimer.current) clearTimeout(hitTimer.current);
+      setHit({ value: damage, key: Date.now() });
+      hitTimer.current = setTimeout(() => setHit(null), 900);
+    }
+    const attacker = slot === "active" ? deployed.active : deployed.bench[slot];
+    if (!attacker || attacker.energy <= 0) return;
+    const spent = attacker.energy;
+    setDiscardEnergy((current) => current + spent);
+    setDeployed((current) => {
+      if (slot === "active") {
+        return {
+          ...current,
+          active: current.active ? { ...current.active, energy: 0 } : null,
+        };
+      }
+      return {
+        ...current,
+        bench: current.bench.map((card, index) =>
+          index === slot && card ? { ...card, energy: 0 } : card,
+        ),
+      };
+    });
+    const placement = confirmPlacement(
+      120,
+      Math.min(300, window.innerWidth * 0.84),
+    );
+    setEnergyNotice({ x: placement.x, y: placement.y, count: spent });
+  };
+
+  const useAbility = () => {
+    setAbilityConfirm(null);
+    if (discardEnergy <= 0 || !deployed.active) return;
+    setDiscardEnergy((current) => current - 1);
+    setDeployed((current) =>
+      current.active
+        ? {
+            ...current,
+            active: { ...current.active, energy: current.active.energy + 1 },
+          }
+        : current,
+    );
+    setEnergyPulse(Date.now());
+    if (pulseTimer.current) clearTimeout(pulseTimer.current);
+    pulseTimer.current = setTimeout(() => setEnergyPulse(null), 900);
   };
 
   const retreat = () => {
@@ -595,6 +677,7 @@ export function WideBoard({
     () => () => {
       if (closeTimer.current) clearTimeout(closeTimer.current);
       if (hitTimer.current) clearTimeout(hitTimer.current);
+      if (pulseTimer.current) clearTimeout(pulseTimer.current);
     },
     [],
   );
@@ -639,7 +722,12 @@ export function WideBoard({
 
   return (
     <div className="relative flex h-full w-full flex-col">
-      <WideBar isTop tag="Player 2" handCount={hands.p2.length} />
+      <WideBar
+        isTop
+        tag="Player 2"
+        handCount={hands.p2.length}
+        points={points.p2}
+      />
       <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
         <div
           data-stage
@@ -785,8 +873,8 @@ export function WideBoard({
                       <Image
                         src={`/status/${shownCondition}.png`}
                         alt=""
-                        width={105}
-                        height={105}
+                        width={115}
+                        height={115}
                         className="size-[1.3cqw] drop-shadow-[0_0.05cqw_0.1cqw_rgba(0,0,0,0.6)]"
                       />
                     </motion.span>
@@ -797,8 +885,8 @@ export function WideBoard({
                     <Image
                       src="/status/shield.png"
                       alt=""
-                      width={105}
-                      height={105}
+                      width={115}
+                      height={115}
                       className="size-[1.3cqw] drop-shadow-[0_0.05cqw_0.1cqw_rgba(0,0,0,0.6)]"
                     />
                   </span>
@@ -808,6 +896,19 @@ export function WideBoard({
                   onOpen={() => openActions("active")}
                   onPreview={setPreviewFront}
                 />
+                {energyPulse ? (
+                  <span className="pointer-events-none absolute bottom-[0.5cqw] left-1/2 z-20 -translate-x-1/2">
+                    <motion.span
+                      key={energyPulse}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: [0, 1, 1, 0], y: -18 }}
+                      transition={{ duration: 0.9, ease: "easeOut" }}
+                      className="grid size-[1.1cqw] place-items-center rounded-full bg-[#4CAF50] text-white shadow-[0_0_0.4cqw_rgba(76,175,80,0.8)]"
+                    >
+                      <Leaf className="size-[0.7cqw]" />
+                    </motion.span>
+                  </span>
+                ) : null}
               </>
             ) : (
               "Active"
@@ -867,6 +968,7 @@ export function WideBoard({
             cards={discard}
             className={cn(WIDE_PILE, "left-[62.7604cqw] top-[37.8229cqw]")}
             labelClassName={WIDE_PILE_LABEL}
+            onClick={() => setDiscardOpen(true)}
           />
           <button
             type="button"
@@ -881,7 +983,12 @@ export function WideBoard({
           </button>
         </div>
       </div>
-      <WideBar tag="Player 1" isTop={false} handCount={hands.p1.length} />
+      <WideBar
+        tag="Player 1"
+        isTop={false}
+        handCount={hands.p1.length}
+        points={points.p1}
+      />
       <Hand
         side="p2"
         cards={hands.p2}
@@ -1043,7 +1150,7 @@ export function WideBoard({
               confirmPlacement(140, Math.min(280, window.innerWidth * 0.78)),
             );
           }}
-          onMove={attack}
+          onMove={(damage) => attack(damage, actions.slot)}
           onRetreat={retreat}
           onStatus={() => {
             setActions(null);
@@ -1058,6 +1165,94 @@ export function WideBoard({
           onToggle={toggleStatus}
           onClose={() => setStatusOpen(false)}
         />
+      ) : null}
+
+      {discardOpen ? (
+        <div
+          className="fixed inset-0 z-40 grid place-items-center bg-black/45 p-6 backdrop-blur-[2px]"
+          onClick={() => setDiscardOpen(false)}
+        >
+          <div
+            className="w-[min(26rem,92vw)] rounded-2xl border border-white/70 bg-[#0B0B0D]/95 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-[0.7rem] font-medium tracking-[0.2em] text-white/90">
+                PLAYER 1 - DISCARD PILE ({discard.length})
+              </h2>
+              <button
+                type="button"
+                aria-label="Close discard"
+                onClick={() => setDiscardOpen(false)}
+                className="grid size-6 place-items-center rounded-md border border-white/60 text-[0.65rem] text-white/80 transition-colors hover:bg-white/10"
+              >
+                x
+              </button>
+            </div>
+            <div className="mt-4 flex flex-col items-center">
+              <span className="grid size-[2.6rem] place-items-center rounded-full bg-[#0F3A12] text-[#6EE86E] ring-2 ring-[#57D65A]">
+                <Leaf className="size-5" />
+              </span>
+              <span className="mt-1 text-sm font-bold text-white">
+                {discardEnergy}
+              </span>
+            </div>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {discard.map((front, index) => (
+                <Image
+                  key={`${front}-${index}`}
+                  src={CARD_FRONTS[front]}
+                  alt=""
+                  width={400}
+                  height={560}
+                  className="h-auto w-14 rounded-md ring-1 ring-white/15"
+                />
+              ))}
+              {discard.length === 0 ? (
+                <p className="text-xs text-muted">No cards in the discard</p>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {energyNotice ? (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setEnergyNotice(null)}
+        >
+          <div
+            className="absolute w-[min(19rem,84vw)] rounded-2xl border border-white/70 bg-[#0B0B0D]/95 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
+            style={{ left: energyNotice.x, top: energyNotice.y }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="text-[0.72rem] font-medium tracking-[0.16em] text-white/85">
+              DISCARD
+            </p>
+            <div className="mt-3 flex items-center gap-2">
+              {Array.from({ length: energyNotice.count }, (_, index) => (
+                <span
+                  key={index}
+                  className="grid size-[1.35rem] place-items-center rounded-full bg-[#0F3A12] text-[#6EE86E] ring-2 ring-[#57D65A]"
+                >
+                  <Leaf className="size-3.5" />
+                </span>
+              ))}
+              <span className="text-xs text-white/70">
+                {energyNotice.count} / {energyNotice.count}
+              </span>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setEnergyNotice(null)}
+                className="rounded-full bg-white px-5 py-1.5 text-xs font-semibold text-black transition-transform active:scale-95"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {abilityConfirm ? (
@@ -1094,7 +1289,7 @@ export function WideBoard({
             <div className="mt-4 flex justify-end">
               <button
                 type="button"
-                onClick={() => setAbilityConfirm(null)}
+                onClick={useAbility}
                 className="rounded-full bg-white px-5 py-1.5 text-xs font-semibold text-black transition-transform active:scale-95"
               >
                 Yes
