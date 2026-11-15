@@ -39,6 +39,33 @@
 - ฝ่าย Player 2 ยังวางโปเกมอนบนบอร์ดไม่ได้
 - ไม่มีการบันทึกเกม, reconnect, หรือ multiplayer
 
+## เทคโนโลยีที่ใช้
+
+| ส่วน | ใช้ |
+| --- | --- |
+| Framework | Next.js 16.4.6 (App Router, Turbopack, cacheComponents, partialPrefetching) |
+| UI | React 19.3.0, React DOM 19.3.0 |
+| ภาษา | TypeScript 5 (strict) |
+| Styling | Tailwind CSS 4.3.3 ผ่าน `@theme` tokens ใน `app/globals.css`, clsx, tailwind-merge, class-variance-authority |
+| Animation | motion 14.14 (`motion/react`) |
+| Icons | lucide-react |
+| ฟอนต์ | Nunito ผ่าน `next/font/google` (`font-two`) และ Segoe UI เป็นฟอนต์หลัก |
+| UI primitive | Button แบบ shadcn ผ่าน `@radix-ui/react-slot` |
+| Lint | ESLint 9 และ eslint-config-next 16.4.6 |
+
+## สำหรับ AI agents และผู้พัฒนาที่จะมาต่อ
+
+- อ่าน `AGENTS.md` ก่อนแก้โค้ด โปรเจกต์ใช้ Next.js 16.4.6 ซึ่ง API และโครงสร้างอาจต่างจากที่โมเดลจำได้ ให้เปิด `node_modules/next/dist/docs/` ตามที่ AGENTS.md ระบุ
+- นี่คือ UI POC ไม่ใช่ source of truth ของกติกาเกม ห้ามคิดกฎหรือ flow เกมขึ้นเอง ให้ยึดกติกาจริงและ engine ที่จะต่อ ส่วน `docs/design-system.md` เป็นแนวทาง UI เท่านั้น
+- state หลักอยู่ที่ `components/game/use-dealer.ts` (มือ, deck, mulligan), `components/board/wide-board.tsx` (โปเกมอนบนบอร์ด, HP, จี้, สถานะ, stadium, discard), `components/opening-board.tsx` (flow เกม, เทิร์น, แต้ม, จบเกม) การต่อ engine ให้ย้าย state เหล่านี้ไป engine แล้วป้อนกลับเป็น props และผูก event กับคำสั่งของ engine
+- ข้อมูลการ์ดเป็น mock ที่ `CARD_FRONTS` และ `CARD_HP` ใน `components/game/card.tsx` ต้องเปลี่ยนเป็นข้อมูลจาก engine
+- ข้อจำกัดที่รู้อยู่: ฝั่ง Player 2 ยังวางโปเกมอนไม่ได้, ดาเมจเป็นการแสดงผล, ปุ่มทดสอบ `Get point` และ `End battle` อยู่ใน UI จริงชั่วคราว, ไม่มี server, persistence หรือ multiplayer
+- กฎ UI: ใช้ Tailwind utility เท่านั้น ไม่เขียน CSS component class เพิ่ม token สีและฟอนต์ใน `app/globals.css` หลีกเลี่ยง em dash และ middot ในข้อความที่ผู้ใช้เห็น ข้อความ UI เป็นอังกฤษ เอกสารเป็นไทย
+- Exit ของการ์ดในมือ อย่ากลับไปใช้ `AnimatePresence` เพราะ exit promise ของ motion ค้างและทำให้การ์ดค้างสะสม ให้ใช้ departing overlay ใน `use-dealer` และ `wide-board` ตามเดิม
+- Panel และ popup ต้อง clamp ให้อยู่ใน viewport และ panel การ์ดยึดแถว Bench ใต้ Active รักษาพฤติกรรมนี้เมื่อเพิ่ม panel ใหม่ และต้องไม่ทับ HP หรือขอบจอ
+- อย่ารัน `npm run build` ขณะ dev server ทำงานอยู่ เพราะเคยทำให้ dev เสิร์ฟ CSS เก่าหรือพัง ให้ปิด dev ก่อน build แล้วค่อยเริ่มใหม่
+- อย่า commit หรือ push เองนอกจากได้รับคำสั่ง และห้ามใส่ AI credit ใน commit message
+
 ## การใช้งาน
 
 ต้องมี Node.js 20 ขึ้นไป (แนะนำ LTS ล่าสุด) และ npm
