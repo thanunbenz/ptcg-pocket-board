@@ -49,6 +49,12 @@ export function OpeningBoard() {
           deckP2Ref={deckP2Ref}
           handP1Ref={handP1Ref}
           handP2Ref={handP2Ref}
+          onDrawCard={dealer.drawCard}
+          onMulligan={dealer.mulligan}
+          onPlayCard={dealer.playCard}
+          shuffleSide={dealer.shuffleSide}
+          departing={dealer.departing}
+          busy={dealer.dealing || dealer.mulliganing}
         />
       </div>
       <div className="hidden h-full portrait:flex">
@@ -92,10 +98,10 @@ export function OpeningBoard() {
             boardRef={boardRef}
             onResult={(heads) => {
               setFirstPlayer(heads ? "p1" : "p2");
+              window.setTimeout(() => setCoinOpen(false), 700);
               window.setTimeout(() => {
-                setCoinOpen(false);
                 void dealer.deal();
-              }, 900);
+              }, 1100);
             }}
           />
         ) : null}

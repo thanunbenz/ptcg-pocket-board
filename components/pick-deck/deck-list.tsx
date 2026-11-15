@@ -91,7 +91,7 @@ export function DeckList({
         ))}
       </div>
 
-      <div className="mt-4 max-h-[35.25rem] min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable] [&::-webkit-scrollbar-thumb:hover]:bg-white/50 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-solid [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-white/30 [&::-webkit-scrollbar-thumb]:bg-clip-padding [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-2.5 short:mt-2 min-[560px]:max-h-[17.25rem] min-[560px]:short:max-h-[9.5rem]">
+      <div className="mt-4 max-h-[35.25rem] min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable] short:mt-2 min-[560px]:max-h-[17.25rem] min-[560px]:short:max-h-[9.5rem]">
         <div className="grid grid-cols-1 gap-3 min-[560px]:grid-cols-2 min-[560px]:short:grid-cols-3 short:gap-2">
           {decks.map((deck) => (
             <button
