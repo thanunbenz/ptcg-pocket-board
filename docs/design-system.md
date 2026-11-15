@@ -68,9 +68,13 @@
 | DeckList                                        | `components/pick-deck/deck-list.tsx`        | glass, muted, white/10              |
 | VsIntro                                         | `components/pick-deck/vs-intro.tsx`         | opponent, self, white, black/70     |
 | CoinToss                                        | `components/pick-deck/coin-toss.tsx`        | opponent, self, white, black/55     |
-| Card                                            | `components/game/card.tsx`                  | white, slot                        |
-| Hand                                            | `components/game/hand.tsx`                  | white, slot                        |
-| useDealer                                       | `components/game/use-dealer.ts`             | -                                  |
+| Card                                            | `components/game/card.tsx`                  | white, slot                         |
+| Hand                                            | `components/game/hand.tsx`                  | white, slot                         |
+| TurnChange                                      | `components/game/turn-change.tsx`           | self, opponent, black/72, white     |
+| CardActions                                     | `components/game/card-actions.tsx`          | white, self, black                  |
+| StatusPopup                                     | `components/game/status-popup.tsx`          | white/10, white/70                  |
+| CoinPopup                                       | `components/game/coin-popup.tsx`            | white, black/60                     |
+| useDealer                                       | `components/game/use-dealer.ts`             | -                                   |
 
 แท็บในหน้าเลือกเด็คเป็นแบบ minimal: ข้อความสองแท็บบนเส้นคั่นบาง `white/10` แท็บที่เลือกใช้ข้อความขาวและเส้นใต้ 2px แท็บที่ไม่ได้เลือกใช้ `muted`
 
@@ -97,9 +101,20 @@
 - hover ไพ่ในมือ Player 2: ยกทีละใบเหมือนกันด้วยสปริง แต่ไม่แสดงหน้าไพ่และไม่มี preview
 - hover Deck ทั้งสองฝั่งจะแสดงเมนูควบคุมขนาดกะทัดรัด: ฝั่ง Player 2 เปิดทางซ้ายของกอง ฝั่ง Player 1 เปิดทางขวา และเลื่อนเมาส์จากกองไปกดในเมนูได้โดยไม่หาย
 - เมนูมี DRAW (จั่ว 1 ใบเข้าฝั่งนั้น), VIEW DECK (แผงดูการ์ดที่เหลือเป็นหลังการ์ด), MULLIGAN (เก็บมือเข้ากอง สับ 2 รอบ แล้วแจกใหม่ 5 ใบ), PROBABILITIES (จำนวนคงเหลือ, ในมือ, โอกาสจั่วใบใดใบหนึ่ง)
-- เส้นกลางจอมีป้ายสถานะ `Game not started` เป็นแถบขาวตัวอักษรเข้ม ทางซ้ายของปุ่ม Start
+- เส้นกลางจอมีป้ายสถานะสีขาวตัวอักษรเข้ม ทางซ้ายของปุ่ม Start ก่อนเริ่มเกมเขียน `Game not started` หลังเริ่มเกมเป็น `Player N turn` ตามเทิร์นปัจจุบัน
+- ปุ่ม Start เดิมกลายเป็นปุ่มเทิร์นหลังเกมเริ่ม: ป้ายเปลี่ยนเป็น `End Turn` กดแล้วเล่น TurnChange แล้วสลับเทิร์น ระหว่างแจกการ์ดหรือ Mulligan ปุ่มกดไม่ได้ ส่วนก่อนเริ่มเกมยังเปิดหน้าเลือกเด็คเหมือนเดิม
+- FAB `...` เปิดหน้าเลือกเด็คเพื่อรีเซ็ตเดโม
+- TurnChange: overlay เต็มจอ ฉากหลัง `black/72` + blur 2px แถบหมุน -8 องศา สูง 24.7dvh กว้าง 150vw กลางจอที่ 45% ขอบขาว 2px P1 gradient `#123058` ไป `#0A1627` P2 `#150808` ไป `#361111` ข้อความ `PLAYER N Turn` สีขาว Segoe UI Black 900 ขนาด 8.5dvh
+- คลิกการ์ดที่วางบน Active หรือ Bench เปิด CardActions: หัว `NAME` + ปุ่ม X, แถว `ABILITY` สีแดง, แถวท่า 2 แถวพร้อมดวงพลังงานเขียว (แถวแรกมีเลข 100), `Retreat` เฉพาะ Active และแถว `Status` เฉพาะ Active; คลิกนอก panel หรือ X เพื่อปิด
+- เลือกท่าโจมตีจะปิด panel และขึ้นเลข `-100` สี opponent กลางช่อง Active ฝั่งตรงข้าม 900ms, Retreat สลับ Active กับ Bench ใบแรกและล้างสถานะทิ้ง
+- ลากการ์ด Trainer (การ์ด abandoned-station) จากมือไปช่อง Stadium ของ Player 1 ได้, คลิกการ์ด Stadium จะขึ้น panel `NAME` + `Yes`, กด Yes แล้วการ์ดย้ายเข้า Discard และจั่ว 1 ใบ
+- Discard ของ Player 1 แสดงหน้าการ์ดล่าสุดที่เข้า discard พร้อม pill จำนวนที่ขอบล่าง แบบเดียวกับเฟรม 04 has discard
+- แถว Status เปิด popup ปรับสถานะของ Active: 6 ไอคอน (Poisoned, Asleep, Paralyzed, Confused, Burned, Shield) เลือกแล้วมี ring ขาว
+- สถานะบน Active แสดงช่องเดียวที่ขอบซ้าย ขนาด 1.3cqw: ถ้ามีหลายสถานะจะสลับโชว์ทีละอันทุก 2s พร้อม fade เข้าเล็กน้อย, ไอคอน Shield แยกไปขอบขวากึ่งกลางแนวตั้งเพื่อไม่ทับป้าย HP
+- FAB ปุ่ม `...` เปิด CoinPopup ระหว่างเกม: เหรียญกลางจอ ไม่มีฉากหลังหรี่ โยนอัตโนมัติ 1.4s แล้วขึ้นป้าย `Coins: Head` หรือ `Coins: Tail` ปิดเองที่ 3.6s หรือคลิกเพื่อปิด; FAB `Undo` เดิมเปลี่ยนเป็นปุ่ม Restart เปิดหน้าเลือกเด็ค
+- TurnChange animation: ฉากหลัง fade 200ms, แถบสไลด์เข้าจากซ้ายด้วย spring 650ms, สลับเทิร์นที่ 700ms, แถบสไลด์ออกขวา 450ms เริ่มที่ 1800ms, ปิด overlay ที่ 2300ms, reduced motion เหลือ fade 150ms ไม่สไลด์
 - ลากการ์ดจากมือ Player 1 ไปวางบนช่อง Active หรือ Bench ที่ว่างได้ การ์ดจะถูกย้ายจากมือเข้าช่องพร้อมป้าย HP มุมขวาบน และแถบ HP ด้านบน (เขียว > 50%, เหลือง > 20%, แดงต่ำกว่านั้น)
-- คลิกการ์ดที่วางบนบอร์ดเพื่อลด HP 10% ต่อครั้ง ป้ายจะแสดงค่า HP และเปอร์เซ็นต์ที่เหลือ เช่น `216 · 90%`
+- การ์ดที่วางบนบอร์ดแสดงป้าย HP ที่มุมขวาบน และแถบ HP ด้านบน (เขียว > 50%, เหลือง > 20%, แดงต่ำกว่านั้น) โดยค่า HP ลดจากการโจมตี
 - ลากการ์ดจากมือด้วย pointer ตรง ๆ (ไม่ใช้ ghost ของเบราว์เซอร์) ระหว่างลากการ์ดตั้งตรง เอียง 0 องศา ไม่เอาองศาพัดของมือติดมา, การ์ดที่ลากตั้ง `pointer-events: none` เพื่อให้ hit test ทะลุไปหาช่อง Active/Bench, ถ้าปล่อยบนช่องว่างจะลงช่องนั้นทันทีโดยไม่มีอนิเมชัน (exit duration 0) ถ้าปล่อยที่อื่นจะเด้งกลับที่เดิม
 - hover การ์ดที่วางบนบอร์ดจะแสดง preview ใบใหญ่ทางซ้ายเหมือนการ์ดในมือ
 - Energy Zone ฝั่ง Player 1 แสดงไอคอนใบไม้สีเขียวพร้อมป้าย + ลากจากโซนพลังงานไปปล่อยบนช่อง Active/Bench ของเราเพื่อติดพลังงาน (มีลูกพลังงานลอยตาม pointer ระหว่างลาก) และนับเป็นจุดพลังงานสีเขียวที่มุมล่างซ้ายของการ์ด

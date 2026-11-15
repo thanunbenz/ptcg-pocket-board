@@ -5,6 +5,8 @@ import { AnimatePresence } from "motion/react";
 
 import { NarrowBoard } from "@/components/board/narrow-board";
 import { WideBoard } from "@/components/board/wide-board";
+import { CoinPopup } from "@/components/game/coin-popup";
+import { TurnChange } from "@/components/game/turn-change";
 import { useDealer } from "@/components/game/use-dealer";
 import { CoinToss } from "@/components/pick-deck/coin-toss";
 import { PickDeckDialog } from "@/components/pick-deck/pick-deck-dialog";
@@ -21,6 +23,11 @@ export function OpeningBoard() {
   const [isIntroOpen, setIntroOpen] = useState(false);
   const [isCoinOpen, setCoinOpen] = useState(false);
   const [firstPlayer, setFirstPlayer] = useState<"p1" | "p2" | null>(null);
+  const [currentTurn, setCurrentTurn] = useState<"p1" | "p2" | null>(null);
+  const [turnTarget, setTurnTarget] = useState<"p1" | "p2" | null>(null);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [coinPopupOpen, setCoinPopupOpen] = useState(false);
+  const [boardKey, setBoardKey] = useState(0);
 
   const dealer = useDealer({
     p1: { deck: deckP1Ref, hand: handP1Ref },
@@ -29,8 +36,26 @@ export function OpeningBoard() {
 
   const openPicker = () => {
     dealer.cancel();
+    setGameStarted(false);
+    setCurrentTurn(null);
+    setTurnTarget(null);
+    setCoinPopupOpen(false);
     setPickDeckOpen(true);
   };
+
+  const handleStart = () => {
+    if (!gameStarted) {
+      openPicker();
+      return;
+    }
+    if (dealer.dealing || dealer.mulliganing || turnTarget) return;
+    setTurnTarget(currentTurn === "p2" ? "p1" : "p2");
+  };
+
+  const statusLabel =
+    gameStarted && currentTurn
+      ? `Player ${currentTurn === "p1" ? 1 : 2} turn`
+      : "Game not started";
 
   return (
     <div
@@ -40,8 +65,12 @@ export function OpeningBoard() {
     >
       <div className="hidden h-full flex-col landscape:flex">
         <WideBoard
-          onStart={openPicker}
-          startDisabled={dealer.dealing}
+          key={boardKey}
+          onStart={handleStart}
+          onReset={openPicker}
+          startLabel={gameStarted ? "End Turn" : "Start"}
+          statusLabel={statusLabel}
+          startDisabled={dealer.dealing || dealer.mulliganing || !!turnTarget}
           deckCounts={dealer.deckCounts}
           hands={dealer.hands}
           offsets={dealer.offsets}
@@ -54,13 +83,17 @@ export function OpeningBoard() {
           onPlayCard={dealer.playCard}
           shuffleSide={dealer.shuffleSide}
           departing={dealer.departing}
+          onFlipCoin={() => setCoinPopupOpen(true)}
           busy={dealer.dealing || dealer.mulliganing}
         />
       </div>
       <div className="hidden h-full portrait:flex">
         <NarrowBoard
-          onStart={openPicker}
-          startDisabled={dealer.dealing}
+          onStart={handleStart}
+          onReset={openPicker}
+          onFlipCoin={() => setCoinPopupOpen(true)}
+          startLabel={gameStarted ? "End Turn" : "Start"}
+          startDisabled={dealer.dealing || dealer.mulliganing || !!turnTarget}
           deckCounts={dealer.deckCounts}
         />
       </div>
@@ -97,15 +130,31 @@ export function OpeningBoard() {
             key="coin-toss"
             boardRef={boardRef}
             onResult={(heads) => {
-              setFirstPlayer(heads ? "p1" : "p2");
+              const turn = heads ? "p1" : "p2";
+              setFirstPlayer(turn);
+              setCurrentTurn(turn);
               window.setTimeout(() => setCoinOpen(false), 700);
               window.setTimeout(() => {
                 void dealer.deal();
+                setGameStarted(true);
+                setBoardKey((current) => current + 1);
               }, 1100);
             }}
           />
         ) : null}
       </AnimatePresence>
+
+      {turnTarget ? (
+        <TurnChange
+          side={turnTarget}
+          onSwitch={() => setCurrentTurn(turnTarget)}
+          onClose={() => setTurnTarget(null)}
+        />
+      ) : null}
+
+      {coinPopupOpen ? (
+        <CoinPopup onClose={() => setCoinPopupOpen(false)} />
+      ) : null}
     </div>
   );
 }

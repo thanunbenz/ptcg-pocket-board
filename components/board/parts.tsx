@@ -151,10 +151,12 @@ export function PrizeRings({
 
 export function Fab({
   label,
+  onClick,
   className,
   children,
 }: {
   label: string;
+  onClick?: () => void;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -163,6 +165,7 @@ export function Fab({
       variant="outline"
       size="icon"
       aria-label={label}
+      onClick={onClick}
       className={cn("border-[#303030] bg-[#111] p-0 text-white", className)}
     >
       {children}

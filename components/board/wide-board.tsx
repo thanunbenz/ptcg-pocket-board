@@ -17,9 +17,14 @@ import {
   TOP_WASH,
 } from "@/components/board/parts";
 import { cn } from "@/lib/utils";
+import { CardActions } from "@/components/game/card-actions";
 import { CARD_FRONTS, CARD_HP } from "@/components/game/card";
 import { Hand } from "@/components/game/hand";
 import { ShuffleLayer } from "@/components/game/shuffle-layer";
+import {
+  StatusPopup,
+  type StatusId,
+} from "@/components/game/status-popup";
 import type {
   CardId,
   DepartingCard,
@@ -146,9 +151,11 @@ function WideBar({
 
 function WideStartButton({
   onStart,
+  label,
   disabled,
 }: {
   onStart: () => void;
+  label: string;
   disabled?: boolean;
 }) {
   const reduceMotion = useReducedMotion();
@@ -175,7 +182,7 @@ function WideStartButton({
         whileTap={reduceMotion || disabled ? undefined : { scale: 0.96 }}
         className="relative m-0 box-border block h-full min-h-0 w-full rounded-full bg-white px-0 py-0 text-[0.78125cqw] leading-none font-medium text-[#A7A7A7] hover:bg-white"
       >
-        Start
+        {label}
       </MotionButton>
     </span>
   );
@@ -183,11 +190,11 @@ function WideStartButton({
 
 function DeployedCard({
   card,
-  onDamage,
+  onOpen,
   onPreview,
 }: {
   card: { front: number; hp: number; maxHp: number; energy: number };
-  onDamage: () => void;
+  onOpen: () => void;
   onPreview: (front: number | null) => void;
 }) {
   const ratio = card.maxHp > 0 ? card.hp / card.maxHp : 0;
@@ -197,7 +204,7 @@ function DeployedCard({
       type="button"
       onClick={(event) => {
         event.stopPropagation();
-        onDamage();
+        onOpen();
       }}
       onMouseEnter={() => onPreview(card.front)}
       onMouseLeave={() => onPreview(null)}
@@ -244,6 +251,41 @@ function DeployedCard({
   );
 }
 
+function DiscardPile({
+  cards,
+  className,
+  labelClassName,
+}: {
+  cards: number[];
+  className?: string;
+  labelClassName?: string;
+}) {
+  const top = cards[cards.length - 1];
+  if (top === undefined) {
+    return (
+      <Pile label="Discard" className={className} labelClassName={labelClassName} />
+    );
+  }
+  return (
+    <div className={cn("relative overflow-hidden", className)}>
+      <Image
+        src={CARD_FRONTS[top]}
+        alt=""
+        fill
+        sizes="20vw"
+        draggable={false}
+        className="object-cover"
+      />
+      <span className="absolute bottom-[8%] left-1/2 flex -translate-x-1/2 items-center gap-[0.16cqw] rounded-full bg-black/90 px-[0.32cqw] py-[0.1cqw] text-[0.5cqw] font-bold text-white">
+        <span className="grid size-[0.5cqw] place-items-center rounded-full bg-white">
+          <span className="size-[0.22cqw] rounded-[0.04cqw] bg-black" />
+        </span>
+        {cards.length}
+      </span>
+    </div>
+  );
+}
+
 function DepartingCardView({
   card,
   index,
@@ -279,6 +321,9 @@ function DepartingCardView({
 
 export function WideBoard({
   onStart,
+  onReset,
+  startLabel,
+  statusLabel,
   startDisabled,
   deckCounts,
   hands,
@@ -292,9 +337,13 @@ export function WideBoard({
   onPlayCard,
   shuffleSide,
   departing,
+  onFlipCoin,
   busy,
 }: {
   onStart: () => void;
+  onReset: () => void;
+  startLabel: string;
+  statusLabel: string;
   startDisabled?: boolean;
   deckCounts: Record<"p1" | "p2", number>;
   hands: Record<"p1" | "p2", CardId[]>;
@@ -308,6 +357,7 @@ export function WideBoard({
   onPlayCard: (side: "p1" | "p2", id: CardId) => void;
   shuffleSide: "p1" | "p2" | null;
   departing: Record<"p1" | "p2", DepartingCard[]>;
+  onFlipCoin: () => void;
   busy: boolean;
 }) {
   const [previewFront, setPreviewFront] = useState<number | null>(null);
@@ -329,11 +379,120 @@ export function WideBoard({
     active: Deployed | null;
     bench: (Deployed | null)[];
   }>({ active: null, bench: [null, null, null] });
+  const [discard, setDiscard] = useState<number[]>([]);
+  const [stadium, setStadium] = useState<number | null>(null);
+  const [stadiumConfirm, setStadiumConfirm] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [abilityConfirm, setAbilityConfirm] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [statuses, setStatuses] = useState<StatusId[]>([]);
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [actions, setActions] = useState<{
+    slot: "active" | number;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [hit, setHit] = useState<{ value: number; key: number } | null>(null);
+  const hitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [energyPointer, setEnergyPointer] = useState<{
     x: number;
     y: number;
   } | null>(null);
   const energyDragging = useRef(false);
+
+  const openActions = (slot: "active" | number) => {
+    const panelWidth = Math.min(202, window.innerWidth * 0.86);
+    const placement = confirmPlacement(
+      slot === "active" ? 290 : 210,
+      panelWidth,
+    );
+    setActions({ slot, x: placement.x, y: placement.y });
+  };
+
+  const confirmPlacement = (panelHeight: number, width = 280) => {
+    const activeSlot = document.querySelector('[data-slot="p1-active"]');
+    const benchSlot = document.querySelector('[data-slot="p1-bench-0"]');
+    const box = activeSlot?.getBoundingClientRect();
+    const benchBox = benchSlot?.getBoundingClientRect();
+    const fallbackX = window.innerWidth / 2 - width / 2;
+    const x = box
+      ? Math.min(
+        Math.max(box.x + box.width / 2 - width / 2, 8),
+        window.innerWidth - width - 8,
+      )
+      : fallbackX;
+    const benchCenter = benchBox
+      ? benchBox.y + benchBox.height / 2
+      : window.innerHeight * 0.72;
+    const y = Math.min(
+      Math.max(benchCenter - panelHeight / 2, 8),
+      window.innerHeight - panelHeight - 8,
+    );
+    return { x, y };
+  };
+
+  const attack = (damage: number) => {
+    setActions(null);
+    if (damage <= 0) return;
+    if (hitTimer.current) clearTimeout(hitTimer.current);
+    setHit({ value: damage, key: Date.now() });
+    hitTimer.current = setTimeout(() => setHit(null), 900);
+  };
+
+  const retreat = () => {
+    setDeployed((current) => {
+      const benchIndex = current.bench.findIndex((card) => card !== null);
+      const nextActive = current.bench[benchIndex];
+      if (!current.active || benchIndex === -1 || !nextActive) return current;
+      return {
+        active: nextActive,
+        bench: current.bench.map((card, slot) =>
+          slot === benchIndex ? current.active : card,
+        ),
+      };
+    });
+    setStatuses([]);
+    setActions(null);
+  };
+
+  const activeConditions = statuses.filter((status) => status !== "shield");
+  const hasShield = statuses.includes("shield");
+  const [statusCursor, setStatusCursor] = useState(0);
+
+  useEffect(() => {
+    const count = statuses.filter((status) => status !== "shield").length;
+    if (count < 2) return;
+    const timer = window.setInterval(
+      () => setStatusCursor((current) => current + 1),
+      2000,
+    );
+    return () => window.clearInterval(timer);
+  }, [statuses]);
+
+  const shownCondition =
+    activeConditions.length > 0
+      ? activeConditions[statusCursor % activeConditions.length]
+      : null;
+
+  const toggleStatus = (status: StatusId) => {
+    setStatuses((current) =>
+      current.includes(status)
+        ? current.filter((entry) => entry !== status)
+        : [...current, status],
+    );
+  };
+
+  const useStadium = () => {
+    if (stadium === null) return;
+    setDiscard((current) => [...current, stadium]);
+    setStadium(null);
+    setStadiumConfirm(null);
+    onDrawCard("p1");
+  };
 
   const placeCard = (slot: "active" | number, id: string, front: number) => {
     const maxHp = CARD_HP[front];
@@ -362,6 +521,13 @@ export function WideBoard({
     const slotName = target?.getAttribute("data-slot");
     if (!slotName) return;
     const front = index % CARD_FRONTS.length;
+    if (slotName === "p1-stadium") {
+      if (front === 1 && stadium === null) {
+        setStadium(front);
+        onPlayCard("p1", id);
+      }
+      return;
+    }
     if (slotName === "p1-active") {
       if (!deployed.active) placeCard("active", id, front);
       return;
@@ -395,12 +561,12 @@ export function WideBoard({
         setDeployed((current) =>
           current.active
             ? {
-                ...current,
-                active: {
-                  ...current.active,
-                  energy: current.active.energy + 1,
-                },
-              }
+              ...current,
+              active: {
+                ...current.active,
+                energy: current.active.energy + 1,
+              },
+            }
             : current,
         );
         return;
@@ -425,30 +591,10 @@ export function WideBoard({
     };
   }, []);
 
-  const damage = (slot: "active" | number) => {
-    const hurt = (card: Deployed) => ({
-      ...card,
-      hp: Math.max(0, card.hp - Math.round(card.maxHp * 0.1)),
-    });
-    setDeployed((current) => {
-      if (slot === "active") {
-        return {
-          ...current,
-          active: current.active ? hurt(current.active) : null,
-        };
-      }
-      return {
-        ...current,
-        bench: current.bench.map((card, index) =>
-          index === slot && card ? hurt(card) : card,
-        ),
-      };
-    });
-  };
-
   useEffect(
     () => () => {
       if (closeTimer.current) clearTimeout(closeTimer.current);
+      if (hitTimer.current) clearTimeout(hitTimer.current);
     },
     [],
   );
@@ -550,26 +696,70 @@ export function WideBoard({
             )}
           >
             Active
+            {hit ? (
+              <motion.span
+                key={hit.key}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="pointer-events-none absolute inset-x-0 top-[22%] text-center text-[1.5cqw] font-black text-opponent"
+              >
+                -{hit.value}
+              </motion.span>
+            ) : null}
           </div>
 
           <div className="absolute left-0 top-[28.75cqw] h-[0.0521cqw] w-full bg-[linear-gradient(90deg,#000,#2F5FA7_50%,#000)]" />
           <span className="absolute left-[44.7917cqw] top-[27.9167cqw] flex h-[1.71875cqw] w-[11.71875cqw] items-center justify-center rounded-full bg-white text-[0.78125cqw] font-semibold text-[#111]">
-            Game not started
+            {statusLabel}
           </span>
-          <WideStartButton onStart={onStart} disabled={startDisabled} />
-
-          <Slot
-            label="Stadium"
-            className={cn(WIDE_CARD, "left-[32.4479cqw] top-[30.0104cqw]")}
+          <WideStartButton
+            onStart={onStart}
+            label={startLabel}
+            disabled={startDisabled}
           />
+
+          <div
+            data-slot="p1-stadium"
+            className={cn(
+              WIDE_CARD,
+              "left-[32.4479cqw] top-[30.0104cqw] flex items-center justify-center overflow-hidden p-0",
+            )}
+          >
+            {stadium === null ? (
+              "Stadium"
+            ) : (
+              <button
+                type="button"
+                onClick={() =>
+                  setStadiumConfirm(
+                    confirmPlacement(110, Math.min(280, window.innerWidth * 0.78)),
+                  )
+                }
+                onMouseEnter={() => setPreviewFront(stadium)}
+                onMouseLeave={() => setPreviewFront(null)}
+                className="relative block h-full w-full cursor-pointer overflow-hidden rounded-[inherit]"
+              >
+                <Image
+                  src={CARD_FRONTS[stadium]}
+                  alt=""
+                  fill
+                  sizes="20vw"
+                  draggable={false}
+                  className="object-cover"
+                />
+              </button>
+            )}
+          </div>
           <Fab
-            label="More options"
+            label="Flip coin"
+            onClick={onFlipCoin}
             className="absolute left-[33.75cqw] top-[41.25cqw] size-[2.2917cqw] rounded-[0.625cqw] [&_svg]:size-[0.7292cqw]"
           >
             <Ellipsis />
           </Fab>
           <Fab
-            label="Undo"
+            label="Restart"
+            onClick={onReset}
             className="absolute left-[33.75cqw] top-[43.9583cqw] size-[2.2917cqw] rounded-[0.625cqw] [&_svg]:size-[0.7292cqw]"
           >
             <Undo2 />
@@ -579,15 +769,46 @@ export function WideBoard({
             data-slot="p1-active"
             className={cn(
               WIDE_ACTIVE,
-              "left-[46.7708cqw] top-[30.3646cqw] overflow-hidden border-self/50 p-0",
+              "left-[46.7708cqw] top-[30.3646cqw] border-self/50 p-0",
             )}
           >
             {deployed.active ? (
-              <DeployedCard
-                card={deployed.active}
-                onDamage={() => damage("active")}
-                onPreview={setPreviewFront}
-              />
+              <>
+                {shownCondition ? (
+                  <span className="pointer-events-none absolute top-[0.5cqw] -left-[0.45cqw] z-20">
+                    <motion.span
+                      key={shownCondition}
+                      initial={{ opacity: 0.15 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
+                    >
+                      <Image
+                        src={`/status/${shownCondition}.png`}
+                        alt=""
+                        width={105}
+                        height={105}
+                        className="size-[1.3cqw] drop-shadow-[0_0.05cqw_0.1cqw_rgba(0,0,0,0.6)]"
+                      />
+                    </motion.span>
+                  </span>
+                ) : null}
+                {hasShield ? (
+                  <span className="pointer-events-none absolute top-1/2 -right-[0.45cqw] z-20 -translate-y-1/2">
+                    <Image
+                      src="/status/shield.png"
+                      alt=""
+                      width={105}
+                      height={105}
+                      className="size-[1.3cqw] drop-shadow-[0_0.05cqw_0.1cqw_rgba(0,0,0,0.6)]"
+                    />
+                  </span>
+                ) : null}
+                <DeployedCard
+                  card={deployed.active}
+                  onOpen={() => openActions("active")}
+                  onPreview={setPreviewFront}
+                />
+              </>
             ) : (
               "Active"
             )}
@@ -606,7 +827,7 @@ export function WideBoard({
               {deployed.bench[slot] ? (
                 <DeployedCard
                   card={deployed.bench[slot]!}
-                  onDamage={() => damage(slot)}
+                  onOpen={() => openActions(slot)}
                   onPreview={setPreviewFront}
                 />
               ) : (
@@ -642,8 +863,8 @@ export function WideBoard({
               onMouseLeave={scheduleCloseDeck}
             />
           </div>
-          <Pile
-            label="Discard"
+          <DiscardPile
+            cards={discard}
             className={cn(WIDE_PILE, "left-[62.7604cqw] top-[37.8229cqw]")}
             labelClassName={WIDE_PILE_LABEL}
           />
@@ -807,6 +1028,107 @@ export function WideBoard({
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      {actions ? (
+        <CardActions
+          x={actions.x}
+          y={actions.y}
+          active={actions.slot === "active"}
+          statusCount={statuses.length}
+          hasBench={deployed.bench.some((card) => card !== null)}
+          onClose={() => setActions(null)}
+          onAbility={() => {
+            setActions(null);
+            setAbilityConfirm(
+              confirmPlacement(140, Math.min(280, window.innerWidth * 0.78)),
+            );
+          }}
+          onMove={attack}
+          onRetreat={retreat}
+          onStatus={() => {
+            setActions(null);
+            setStatusOpen(true);
+          }}
+        />
+      ) : null}
+
+      {statusOpen ? (
+        <StatusPopup
+          selected={statuses}
+          onToggle={toggleStatus}
+          onClose={() => setStatusOpen(false)}
+        />
+      ) : null}
+
+      {abilityConfirm ? (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setAbilityConfirm(null)}
+        >
+          <div
+            className="absolute w-[min(17.5rem,78vw)] rounded-2xl border border-white/70 bg-[#0B0B0D]/95 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
+            style={{ left: abilityConfirm.x, top: abilityConfirm.y }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-[0.72rem] font-medium tracking-[0.16em] text-white/85">
+                NAME
+              </p>
+              <button
+                type="button"
+                aria-label="Close ability"
+                onClick={() => setAbilityConfirm(null)}
+                className="grid size-5 place-items-center rounded-md border border-white/60 text-[0.65rem] text-white/80 transition-colors hover:bg-white/10"
+              >
+                x
+              </button>
+            </div>
+            <div className="mt-3 flex items-center gap-2 rounded-full border border-[#B23B3B]/70 bg-[#2A0D10] px-2 py-1">
+              <span className="rounded-full bg-[#521418] px-2.5 py-[0.15rem] text-[0.55rem] font-bold tracking-wide text-[#FF6B6B] uppercase">
+                Ability
+              </span>
+              <span className="truncate text-[0.72rem] text-white/90">
+                Name of ability
+              </span>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setAbilityConfirm(null)}
+                className="rounded-full bg-white px-5 py-1.5 text-xs font-semibold text-black transition-transform active:scale-95"
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {stadiumConfirm && stadium !== null ? (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setStadiumConfirm(null)}
+        >
+          <div
+            className="absolute w-[min(17.5rem,78vw)] rounded-2xl border border-white/70 bg-[#0B0B0D]/95 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
+            style={{ left: stadiumConfirm.x, top: stadiumConfirm.y }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="text-[0.72rem] font-medium tracking-[0.16em] text-white/85">
+              NAME
+            </p>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={useStadium}
+                className="rounded-full bg-white px-5 py-1.5 text-xs font-semibold text-black transition-transform active:scale-95"
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

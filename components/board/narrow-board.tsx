@@ -44,9 +44,11 @@ function NarrowBar({ tag, isTop }: { tag: string; isTop: boolean }) {
 
 function NarrowStartButton({
   onStart,
+  label,
   disabled,
 }: {
   onStart: () => void;
+  label: string;
   disabled?: boolean;
 }) {
   const reduceMotion = useReducedMotion();
@@ -73,7 +75,7 @@ function NarrowStartButton({
         whileTap={reduceMotion || disabled ? undefined : { scale: 0.96 }}
         className="relative block h-full w-full rounded-full bg-white px-0 py-0 text-[0.875rem] leading-none font-medium text-[#A7A7A7] hover:bg-white"
       >
-        Start
+        {label}
       </MotionButton>
     </span>
   );
@@ -95,10 +97,16 @@ function BenchRow() {
 
 export function NarrowBoard({
   onStart,
+  onReset,
+  onFlipCoin,
+  startLabel,
   startDisabled,
   deckCounts,
 }: {
   onStart: () => void;
+  onReset: () => void;
+  onFlipCoin: () => void;
+  startLabel: string;
   startDisabled?: boolean;
   deckCounts: Record<"p1" | "p2", number>;
 }) {
@@ -125,10 +133,18 @@ export function NarrowBoard({
               label="Stadium"
               className="aspect-[5/7] w-full rounded-lg border-[#2F2F35] text-[0.625rem]"
             />
-            <Fab label="More options" className="size-10 rounded-xl [&_svg]:size-[1.125rem]">
+            <Fab
+              label="Flip coin"
+              onClick={onFlipCoin}
+              className="size-10 rounded-xl [&_svg]:size-[1.125rem]"
+            >
               <Ellipsis />
             </Fab>
-            <Fab label="Undo" className="size-10 rounded-xl [&_svg]:size-[1.125rem]">
+            <Fab
+              label="Restart"
+              onClick={onReset}
+              className="size-10 rounded-xl [&_svg]:size-[1.125rem]"
+            >
               <Undo2 />
             </Fab>
           </div>
@@ -141,7 +157,11 @@ export function NarrowBoard({
           </div>
           <div className="relative flex w-full items-center justify-center">
             <span className="absolute inset-x-0 top-1/2 h-px bg-[linear-gradient(90deg,#000,#2F5FA7_50%,#000)]" />
-            <NarrowStartButton onStart={onStart} disabled={startDisabled} />
+            <NarrowStartButton
+              onStart={onStart}
+              label={startLabel}
+              disabled={startDisabled}
+            />
           </div>
           <div className="flex aspect-[5/7] h-[min(20dvh,40vw)] items-center justify-center rounded-xl border border-self/50 bg-slot text-[0.6875rem] text-muted">
             Active
